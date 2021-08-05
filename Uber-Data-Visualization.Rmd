@@ -1,0 +1,83 @@
+install.packages("ggplot2")
+install.packages("lubridate")
+install.packages("animation")
+install.packages("tidyverse")
+install.packages("forcats")
+install.packages("magrittr") 
+install.packages("dplyr")
+
+library("ggplot2")
+library("lubridate")
+library("animation")
+library("tidyverse")
+library("forcats")
+library("magrittr") 
+library("dplyr")
+
+setClass('Date/Time')
+setAs('character', 'Date/Time', function(from) mdy_hms(from))
+
+data <- read.csv("C://input/uber-raw-data-apr14.csv")
+colnames(data) <- c("DateTime", 'Lat', 'Lon', 'Base')
+
+data <- data %>% mutate(DateTime = mdy_hms(DateTime),
+                         Weekday = wday(DateTime, label=T, abbr=F),
+                         Minute = minute(DateTime),
+                         Base = fct_recode(Base,
+                         "Unter" = "B02512" ,
+                         "Hinter" = "B02598",
+                         "Weiter" = "B02617",
+                         "Schmecken" = "B02682",
+                         "Danach-NY" = "B02764")) %>% as_tibble()
+              
+for (base in levels(data$Base)) {
+  print(ggplot(data[data$Base == base,]) + geom_point(aes(x = Lat, y = Lon)) +
+        ggtitle(paste('Geographical Location of Uber Rides in NY - ', base, sep='')) +
+        xlab('Latitude (Degrees North)') +
+        ylab('Longitude (Degress East)') +
+        xlim(40, 42.2) +
+        ylim(-75, -71.9))
+}
+
+
+ggplot(data) + 
+        geom_freqpoly(aes(x=hour(DateTime), color=Base), bins=24) +
+        ggtitle('Distribution of Uber Rides over Time of Day by Base') +
+        xlab('Hour of Day') + 
+        ylab('Number of Rides') +
+        xlim(0, 23.5)
+        
+        
+ggplot(data) + 
+        geom_bar(aes(x=day(DateTime), fill=Base)) +
+        ggtitle('Distribution of Uber Rides over the Month by Base') +
+        xlab('Day of the Month') + 
+        ylab('Number of Rides')
+        
+        
+ggplot(data) +
+        geom_bar(aes(x = Weekday, fill = Base)) + 
+        ggtitle('Distribution of Uber Rides by Day of the Week by Base') + 
+        xlab('Day of the Week') + 
+        ylab('Number of Rides') 
+
+ggplot(data[(day(data$DateTime) > 2),]) +
+        geom_bar(aes(x = wday(DateTime, label=T, abbr =F), fill = Base)) +
+        ggtitle('Distribution of Uber Rides by Day of the Week (28 Days)') +
+        xlab('Day of the Week') + 
+        ylab('Number of Rides')
+
+
+ggplot(data) + 
+        geom_bar(aes(x = Base, y = (..count..)/sum(..count..))) +
+        ggtitle('Percentage of Uber Rides by Base') +
+        xlab('Base') +
+        ylab('Percentage of Uber Rides')
+        
+        
+ggplot(data) + 
+    geom_hex(aes(x = Lat, y = Lon), bins = 80) + 
+    ggtitle('Hex Map of Geographical Location of Uber Rides') + 
+    xlab('Latitude (Degrees North)')  +
+    ylab('Longitude (Degrees East)')
+    
